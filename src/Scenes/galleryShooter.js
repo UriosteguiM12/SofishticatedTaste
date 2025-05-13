@@ -271,9 +271,7 @@ class galleryShooter extends Phaser.Scene {
                 this.updateBehavior(enemy, newType);
             }
 
-
-            console.log(this.counter % enemy.pathCooldown);
-            if (!enemy.isFollowing && (this.counter % enemy == 0)) {
+            if (!enemy.isFollowing && (this.counter % enemy.pathCooldown == 0)) {
                 enemy.isFollowing = true;
                 enemy.startFollow({
                 duration: 3000,
@@ -433,7 +431,7 @@ class galleryShooter extends Phaser.Scene {
             // setting types
             enemy.hunger =  Math.random() * 250; // might wanna change values bc it ends up changing type really fast
             enemy.behaviorType = "Normal";
-            enemy.pathCooldown = 5;
+            enemy.pathCooldown = 500;
             enemy.isFollowing = false; 
 
             //debug
