@@ -16,6 +16,7 @@ class galleryShooter extends Phaser.Scene{
         this.maxFood = 5; // we won't have more than this much food on screen at once
         this.foodCooldown = 5;
         this.foodCooldownCounter = 0;
+        this.curve = null;
     }
 
     preload() {
@@ -110,9 +111,12 @@ class galleryShooter extends Phaser.Scene{
         my.sprite.enemyFish = new Fish(this, 400, 400, "normalFish", null, 0, 0, null, 5);
         my.sprite.enemyFish.flipX = true;
         my.sprite.enemyArray.push(my.sprite.enemyFish);
+        my.sprite.enemyFish = this.add.follower(this.curve, 10, 10, "normalFish");
+
         my.sprite.enemyFish2 = new Fish(this, 200, 300, "normalFish", null, 0, 0, null, 10);
         my.sprite.enemyFish2.flipX = true;
         my.sprite.enemyArray.push(my.sprite.enemyFish2);
+        my.sprite.enemyFish2 = this.add.follower(this.curve, 10, 10, "normalFish");
 
         // score
         my.sprite.scorePosZero = this.add.sprite(338, 575, "numberZero");
@@ -120,11 +124,84 @@ class galleryShooter extends Phaser.Scene{
         my.sprite.scorePosTwo = this.add.sprite(418, 575, "numberZero");
         my.sprite.scorePosThree = this.add.sprite(458, 575, "numberZero");
 
-        this.counter = 0.0;
+        this.counter = 0;
+
+        /*
+        // have an event handler for button
+            this.scene.start("galleryShooter")
+        */
+
+        this.Behavior = {
+            Hangry: {
+                texture: "hangryFish",
+                speed: 5,
+                firingPath: [
+                    652, 377,
+                    611, 338,
+                    555, 307,
+                    492, 292,
+                    429, 291,
+                    364, 303,
+                    304, 327,
+                    242, 361,
+                    216, 387,
+                    248, 430,
+                    284, 451,
+                    347, 471,
+                    382, 475,
+                    450, 479,
+                    496, 480,
+                    544, 469,
+                    598, 445,
+                    638, 411,
+                    652, 377
+                ],
+                pathCooldown: 5000,
+            },
+            Angry: {
+                texture: "angryFish",
+                speed: 10,
+                firingPath: [
+                    614, 356,
+                    613, 323,
+                    608, 293,
+                    582, 269,
+                    502, 300,
+                    475, 333,
+                    446, 371,
+                    420, 412,
+                    390, 430,
+                    337, 413,
+                    318, 346,
+                    350, 283,
+                    405, 284,
+                    454, 317,
+                    484, 375,
+                    514, 406,
+                    551, 420,
+                    584, 398,
+                    609, 375,
+                    614, 356
+                ],
+                pathCooldown: 100,
+            }, 
+            Normal: {
+                texture: "normalFish",
+                speed: 15,
+                firingPath: [
+                    494, 323,
+                    354, 223,
+                    353, 446,
+                    494, 323
+                ],
+                pathCooldown: 150,
+            }
+        }
     }
 
     update() {
 
+        let Behavior = this.Behavior;
         let my = this.my; 
 
         this.counter ++;
@@ -167,102 +244,35 @@ class galleryShooter extends Phaser.Scene{
         
         }
 
-        const Behavior = {
-            Hangry: {
-                texture: "hangryFish",
-                speed: 5,
-                firingPath: [
-                    652, 377,
-                    611, 338,
-                    555, 307,
-                    492, 292,
-                    429, 291,
-                    364, 303,
-                    304, 327,
-                    242, 361,
-                    216, 387,
-                    248, 430,
-                    284, 451,
-                    347, 471,
-                    382, 475,
-                    450, 479,
-                    496, 480,
-                    544, 469,
-                    598, 445,
-                    638, 411,
-                    652, 377
-                ],
-                pathCooldown: 5,
-            },
-            Angry: {
-                texture: "angryFish",
-                speed: 10,
-                firingPath: [
-                    614, 356,
-                    613, 323,
-                    608, 293,
-                    582, 269,
-                    502, 300,
-                    475, 333,
-                    446, 371,
-                    420, 412,
-                    390, 430,
-                    337, 413,
-                    318, 346,
-                    350, 283,
-                    405, 284,
-                    454, 317,
-                    484, 375,
-                    514, 406,
-                    551, 420,
-                    584, 398,
-                    609, 375,
-                    614, 356
-                ],
-                pathCooldown: 10,
-            }, 
-            Normal: {
-                texture: "normalFish",
-                speed: 15,
-                firingPath: [
-                    494, 323,
-                    354, 223,
-                    353, 446,
-                    494, 323
-                ],
-                pathCooldown: 15,
-            }
-        }
-
         this.foodCooldownCounter--;
 
         for (let enemy of my.sprite.enemyArray) {
 
-            if (this.counter % enemy.pathCooldown == 0) {
-                enemy.x = (100 * Math.cos(-0.5 * this.counter)) + 400;
-                enemy.y = (50 * Math.sin(0.5 * this.counter)) + 200;
-            }
+            /*// movement logic
+            if (this.counter % 30 == 0) {
+                enemy.x -= 5;
+            }*/
 
             // reduce each enemy's hunger by one
             enemy.hunger++;
 
             if (enemy.hunger < 2500) {
                 enemy.speed = Behavior.Normal.speed;
-                enemy.firingPath = Behavior.Normal.firingPath;
+                enemy.firingPath = this.offsetPath(Behavior.Normal.firingPath, 10);
                 enemy.pathCooldown = Behavior.Normal.pathCooldown;
                 enemy.setTexture(Behavior.Normal.texture);
             }
 
             else if (enemy.hunger >= 2500 && enemy.hunger < 5000) {
                 enemy.speed = Behavior.Angry.speed;
-                enemy.firingPath = Behavior.Angry.firingPath;
+                enemy.firingPath = this.offsetPath(Behavior.Angry.firingPath, 10);
                 enemy.pathCooldown = Behavior.Angry.pathCooldown;
                 enemy.setTexture(Behavior.Angry.texture);
             }
 
             else if (enemy.hunger >= 5000 && enemy.hunger < 7500) {
                 enemy.speed = Behavior.Hangry.speed;
-                enemy.firingPath = Behavior.Hangry.firingPath;
+                enemy.firingPath = this.offsetPath(Behavior.Hangry.firingPath, 10);
                 enemy.pathCooldown = Behavior.Hangry.pathCooldown;
                 enemy.setTexture(Behavior.Hangry.texture);
             }
@@ -272,6 +282,44 @@ class galleryShooter extends Phaser.Scene{
                 enemy.setTexture("deadFish");
             }
 
+            // set condition for timer
+            if (this.counter % enemy.pathCooldown == 0) {
+
+                // create curve generalized to each fish pos
+                this.curve = new Phaser.Curves.Spline(enemy.firingPath);
+                
+                // start follow
+                //  - set the run mode flag to false (after implenting run mode)
+                this.runModeActive = false;
+        
+                // Create enemy as a follower type of sprite
+                // Call startFollow() on enemy to have it follow the curve
+                enemy.visible = false;
+                        // have them do their attack pattern by decrementing pathCooldown
+                        // fire bullet logic
+                        // place sprite on screen
+                        // collision logic with the player
+                        // update health system
+
+                    if (this.runModeActive){
+
+                    enemy.stopFollow();
+                    enemy.visible=false;
+                    }
+                
+                enemy.x=this.curve.points[0].x;
+                enemy.y=this.curve.points[0].y;
+                enemy.visible=true;
+                enemy.startFollow({from: 0,
+                                       to: 1,
+                                       delay: 20000,
+                                       duration: 2000,
+                                       ease: 'Sine.easeInOut',
+                                       repeat: 1,
+                                       yoyo: true,
+                                       rotateToPath: true,
+                                    });
+            }
         }
         
         // player movement + constraints
@@ -373,5 +421,12 @@ class galleryShooter extends Phaser.Scene{
         else if (num == "9") {
             return "numberNine";
         }
+    }
+
+    offsetPath(path, offset) {
+        for (let point of path) {
+            point += offset;
+        }
+        return path;
     }
 }
