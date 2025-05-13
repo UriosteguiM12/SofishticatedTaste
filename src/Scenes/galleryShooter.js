@@ -12,7 +12,20 @@ class galleryShooter extends Phaser.Scene{
 
         // this array holds the pointers to the food sprites
         this.my.sprite.foodArray = [];
-        this.my.sprite.enemyArray = [];
+        this.my.sprite.waveOneArray = [];
+
+        this.waveOneActive = true;
+        this.waveTwoActive = false;
+
+        this.waveOne = 10;
+        this.speedOne = [];
+        this.hungerOne = [];
+        this.coorOne = [[400, 400]];
+
+        this.speedTwo = [];
+        this.hungerTwo = [];
+        this.coorTwo = [];
+
         this.maxFood = 5; // we won't have more than this much food on screen at once
         this.foodCooldown = 5;
         this.foodCooldownCounter = 0;
@@ -108,16 +121,6 @@ class galleryShooter extends Phaser.Scene{
         this.playerSpeed = 5;
         this.foodSpeed = 10;
 
-        //my.sprite.enemyFish = this.add.follower(this.curve, 400, 400, "normalFish", null, 0, 0, null, 5);
-        my.sprite.enemyFish = new Fish(this, 400, 400, "normalFish", null, 0, 0, null, 5);
-        my.sprite.enemyArray.push(my.sprite.enemyFish);
-        my.sprite.enemyFish.flipX = true;
-
-        my.sprite.enemyFish2 = new Fish(this, 200, 300, "normalFish", null, 0, 0, null, 10);
-        my.sprite.enemyFish2.flipX = true;
-        my.sprite.enemyArray.push(my.sprite.enemyFish2);
-        //my.sprite.enemyFish2 = this.add.follower(this.curve, 10, 10, "normalFish");*/
-
         // score
         my.sprite.scorePosZero = this.add.sprite(338, 575, "numberZero");
         my.sprite.scorePosOne = this.add.sprite(378, 575, "numberZero");
@@ -204,6 +207,11 @@ class galleryShooter extends Phaser.Scene{
         let Behavior = this.Behavior;
         let my = this.my; 
 
+        if (this.waveOneActive) {
+            this.startWave(1);
+            this.waveOneActive = false;
+        }
+
         this.counter ++;
 
         // displaying score on screen
@@ -246,7 +254,7 @@ class galleryShooter extends Phaser.Scene{
 
         this.foodCooldownCounter--;
 
-        for (let enemy of my.sprite.enemyArray) {
+        for (let enemy of my.sprite.waveOneArray) {
 
             // movement logic
             if (this.counter % 30 == 0) {
@@ -287,7 +295,6 @@ class galleryShooter extends Phaser.Scene{
 
                 // create curve generalized to each fish pos
                 this.curve = new Phaser.Curves.Spline(enemy.firingPath);
-                enemy = this.add.follower(this.curve, 10, 10, "normalFish");
                 
                 // start follow
                 //  - set the run mode flag to false (after implenting run mode)
@@ -350,7 +357,7 @@ class galleryShooter extends Phaser.Scene{
         // make all of the food move
         for (let food of my.sprite.foodArray) {
 
-            for (let enemy of my.sprite.enemyArray) {
+            for (let enemy of my.sprite.waveOneArray) {
                 // check if food is colliding with fish
                 if (this.collides(enemy, food)) {
                     food.visible = false;
@@ -430,4 +437,13 @@ class galleryShooter extends Phaser.Scene{
         }
         return path;
     }
+
+    startWave(int) {
+        for (let i = 0; i < int; i++) {
+            let enemyFish = new Fish(this, this.coorOne[i][0], this.coorOne[i][1], "normalFish", null, Math.random(0, 5000));
+            enemyFish.flipX = true;
+            enemyFish = this.add.follower(this.curve, this.coorOne[i][0], this.coorOne[i][1], "normalFish");
+            this.my.sprite.waveOneArray.push(enemyFish);
+        }
+    };
 }
