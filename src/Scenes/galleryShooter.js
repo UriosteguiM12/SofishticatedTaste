@@ -1,4 +1,4 @@
-class galleryShooter extends Phaser.Scene{
+class galleryShooter extends Phaser.Scene {
     constructor() {
         super("galleryShooter");
 
@@ -12,19 +12,13 @@ class galleryShooter extends Phaser.Scene{
 
         // this array holds the pointers to the food sprites
         this.my.sprite.foodArray = [];
-        this.my.sprite.waveOneArray = [];
+        this.my.sprite.enemyArray = [];
 
         this.waveOneActive = true;
         this.waveTwoActive = false;
 
         this.waveOne = 10;
-        this.speedOne = [];
-        this.hungerOne = [];
-        this.coorOne = [[400, 400]];
-
-        this.speedTwo = [];
-        this.hungerTwo = [];
-        this.coorTwo = [];
+        this.coorOne = [[600, 300]];
 
         this.maxFood = 5; // we won't have more than this much food on screen at once
         this.foodCooldown = 5;
@@ -159,7 +153,7 @@ class galleryShooter extends Phaser.Scene{
                     638, 411,
                     652, 377
                 ],
-                pathCooldown: 5000,
+                pathCooldown: 5000
             },
             Angry: {
                 texture: "angryFish",
@@ -186,8 +180,8 @@ class galleryShooter extends Phaser.Scene{
                     609, 375,
                     614, 356
                 ],
-                pathCooldown: 100,
-            }, 
+                pathCooldown: 250
+            },
             Normal: {
                 texture: "normalFish",
                 speed: 15,
@@ -197,14 +191,15 @@ class galleryShooter extends Phaser.Scene{
                     353, 446,
                     494, 323
                 ],
-                pathCooldown: 150,
+                pathCooldown: 500
             }
-        }
+        };
+
     }
+
 
     update() {
 
-        let Behavior = this.Behavior;
         let my = this.my; 
 
         if (this.waveOneActive) {
@@ -254,80 +249,45 @@ class galleryShooter extends Phaser.Scene{
 
         this.foodCooldownCounter--;
 
-        for (let enemy of my.sprite.waveOneArray) {
-
-            // movement logic
-            if (this.counter % 30 == 0) {
-                enemy.x -= 5;
-            }
-
-            // reduce each enemy's hunger by one
+        for (let enemy of my.sprite.enemyArray) {
             enemy.hunger++;
 
-            if (enemy.hunger < 2500) {
-                enemy.speed = Behavior.Normal.speed;
-                enemy.firingPath = this.offsetPath(Behavior.Normal.firingPath, 10);
-                enemy.pathCooldown = Behavior.Normal.pathCooldown;
-                enemy.setTexture(Behavior.Normal.texture);
+            // BEHAVIOR UPDATING HERE
+            let newType = null;
+
+            // changed order bc if not angry wouldnt be triggered probably
+            if (enemy.hunger < 2000) {
+                newType = "Normal";
+            } else if (enemy.hunger < 4000) {
+                newType = "Angry";
+            } else if (enemy.hunger < 8000) {
+                newType = "Hangry";
+            }
+            else {
+                enemy.texture = "deadFish";
+            }
+            
+            if (enemy.behaviorType !== newType) {
+                this.updateBehavior(enemy, newType);
             }
 
-            else if (enemy.hunger >= 2500 && enemy.hunger < 5000) {
-                enemy.speed = Behavior.Angry.speed;
-                enemy.firingPath = this.offsetPath(Behavior.Angry.firingPath, 10);
-                enemy.pathCooldown = Behavior.Angry.pathCooldown;
-                enemy.setTexture(Behavior.Angry.texture);
-            }
 
-            else if (enemy.hunger >= 5000 && enemy.hunger < 7500) {
-                enemy.speed = Behavior.Hangry.speed;
-                enemy.firingPath = this.offsetPath(Behavior.Hangry.firingPath, 10);
-                enemy.pathCooldown = Behavior.Hangry.pathCooldown;
-                enemy.setTexture(Behavior.Hangry.texture);
-            }
-
-            else if (enemy.hunger >= 7500) {
-                // have the fish turn into a skeleton
-                enemy.setTexture("deadFish");
-            }
-
-            // set condition for timer
-            if (this.counter % enemy.pathCooldown == 0) {
-
-                // create curve generalized to each fish pos
-                this.curve = new Phaser.Curves.Spline(enemy.firingPath);
-                
-                // start follow
-                //  - set the run mode flag to false (after implenting run mode)
-                this.runModeActive = false;
-        
-                // Create enemy as a follower type of sprite
-                // Call startFollow() on enemy to have it follow the curve
-                enemy.visible = false;
-                        // have them do their attack pattern by decrementing pathCooldown
-                        // fire bullet logic
-                        // place sprite on screen
-                        // collision logic with the player
-                        // update health system
-
-                    if (this.runModeActive){
-
-                    enemy.stopFollow();
-                    enemy.visible=false;
+            console.log(this.counter % enemy.pathCooldown);
+            if (!enemy.isFollowing && (this.counter % enemy == 0)) {
+                enemy.isFollowing = true;
+                enemy.startFollow({
+                duration: 3000,
+                ease: 'Sine.easeInOut',
+                repeat: 1, 
+                yoyo: false,
+                rotateToPath: true,
+                onComplete: () => {
+                        enemy.isFollowing = false;
+                        enemy.angle = 0;
+                        enemy.flipX = true;
                     }
-                
-                enemy.x=this.curve.points[0].x;
-                enemy.y=this.curve.points[0].y;
-                enemy.visible=true;
-                enemy.startFollow({from: 0,
-                                       to: 1,
-                                       delay: 20000,
-                                       duration: 2000,
-                                       ease: 'Sine.easeInOut',
-                                       repeat: 1,
-                                       yoyo: true,
-                                       rotateToPath: true,
-                                    });
-            }
+            });
+            } 
         }
         
         // player movement + constraints
@@ -357,12 +317,12 @@ class galleryShooter extends Phaser.Scene{
         // make all of the food move
         for (let food of my.sprite.foodArray) {
 
-            for (let enemy of my.sprite.waveOneArray) {
+            for (let enemy of my.sprite.enemyArray) {
                 // check if food is colliding with fish
-                if (this.collides(enemy, food)) {
+                if (this.collides(enemy, food) && (food.visible)) {
                     food.visible = false;
                     food.x += 800;
-                    console.log(enemy.hunger);
+                    //console.log("hunger: " + enemy.hunger);
 
                     // check if any behaviors need to be updated
                     if (enemy.hunger < 0) {
@@ -431,19 +391,55 @@ class galleryShooter extends Phaser.Scene{
         }
     }
 
-    offsetPath(path, offset) {
-        for (let point of path) {
-            point += offset;
+    updateBehavior(enemy, type) {
+        const behavior = this.Behavior[type];
+        if (enemy.behaviorType !== type) {
+
+            enemy.setTexture(behavior.texture);
+            enemy.pathCooldown = behavior.pathCooldown;
+            let offsetPath = this.offsetPath(behavior.firingPath, enemy.x, enemy.y);
+            let curve = new Phaser.Curves.Spline(offsetPath);
+            enemy.setPath(curve);
+            enemy.behaviorType = type;
         }
-        return path;
+        console.log("behavior updated to "+ type);
     }
 
-    startWave(int) {
-        for (let i = 0; i < int; i++) {
-            let enemyFish = new Fish(this, this.coorOne[i][0], this.coorOne[i][1], "normalFish", null, Math.random(0, 5000));
-            enemyFish.flipX = true;
-            enemyFish = this.add.follower(this.curve, this.coorOne[i][0], this.coorOne[i][1], "normalFish");
-            this.my.sprite.waveOneArray.push(enemyFish);
+    // pretty much the same, just pushing it to a copy of a path so the main path isnt mutated
+    offsetPath(path, enemyX, enemyY) {
+        let result = [];
+        for (let i = 0; i < path.length; i++) {
+            if (i % 2 == 0) {
+                result[i] = path[i] + enemyX;
+            }
+            else {
+                result[i] = path[i] + enemyY;
+            }
+            console.log("offsetPathPoint: " + result[i]);
         }
-    };
+        return result;
+    }
+
+    startWave(count) {
+        for (let i = 0; i < count; i++) {
+            let behavior = this.Behavior.Normal; // for ease of testing i did it this way, u can update to generate randomly
+
+            //creating a new path for each enemy
+            let curve = new Phaser.Curves.Spline(behavior.firingPath);
+            let enemy = this.add.follower(curve, this.coorOne[i][0], this.coorOne[i][1], behavior.texture);
+            enemy.setPath(curve);
+
+            // ok well we're making use of javascripts weirdness and just giving this new properties ig
+            // setting types
+            enemy.hunger =  Math.random() * 250; // might wanna change values bc it ends up changing type really fast
+            enemy.behaviorType = "Normal";
+            enemy.pathCooldown = 5;
+            enemy.isFollowing = false; 
+
+            //debug
+            console.log(`created enemy of type ${enemy.behaviorType} with hunger ${enemy.hunger} at position [${enemy.x}, ${enemy.y}]`);
+
+            this.my.sprite.enemyArray.push(enemy);
+        }
+    }
 }
