@@ -108,15 +108,15 @@ class galleryShooter extends Phaser.Scene{
         this.playerSpeed = 5;
         this.foodSpeed = 10;
 
+        //my.sprite.enemyFish = this.add.follower(this.curve, 400, 400, "normalFish", null, 0, 0, null, 5);
         my.sprite.enemyFish = new Fish(this, 400, 400, "normalFish", null, 0, 0, null, 5);
-        my.sprite.enemyFish.flipX = true;
         my.sprite.enemyArray.push(my.sprite.enemyFish);
-        my.sprite.enemyFish = this.add.follower(this.curve, 10, 10, "normalFish");
+        my.sprite.enemyFish.flipX = true;
 
         my.sprite.enemyFish2 = new Fish(this, 200, 300, "normalFish", null, 0, 0, null, 10);
         my.sprite.enemyFish2.flipX = true;
         my.sprite.enemyArray.push(my.sprite.enemyFish2);
-        my.sprite.enemyFish2 = this.add.follower(this.curve, 10, 10, "normalFish");
+        //my.sprite.enemyFish2 = this.add.follower(this.curve, 10, 10, "normalFish");*/
 
         // score
         my.sprite.scorePosZero = this.add.sprite(338, 575, "numberZero");
@@ -248,10 +248,10 @@ class galleryShooter extends Phaser.Scene{
 
         for (let enemy of my.sprite.enemyArray) {
 
-            /*// movement logic
+            // movement logic
             if (this.counter % 30 == 0) {
                 enemy.x -= 5;
-            }*/
+            }
 
             // reduce each enemy's hunger by one
             enemy.hunger++;
@@ -287,6 +287,7 @@ class galleryShooter extends Phaser.Scene{
 
                 // create curve generalized to each fish pos
                 this.curve = new Phaser.Curves.Spline(enemy.firingPath);
+                enemy = this.add.follower(this.curve, 10, 10, "normalFish");
                 
                 // start follow
                 //  - set the run mode flag to false (after implenting run mode)
