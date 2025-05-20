@@ -18,7 +18,7 @@ class galleryShooter extends Phaser.Scene {
         this.waveTwoActive = false;
 
         this.waveOne = 10;
-        this.coorOne = [[650, 100], [650, 175], [650, 250], [650, 325], [650, 400], [775, 100], [775, 175], [775, 250], [775, 325], [775, 400]];
+        this.coorOne = [[600, 100], [600, 175], [600, 250], [600, 325], [600, 400], [775, 100], [775, 175], [775, 250], [775, 325], [775, 400]];
 
         this.maxFood = 5; // we won't have more than this much food on screen at once
         this.foodCooldown = 5;
@@ -251,11 +251,13 @@ class galleryShooter extends Phaser.Scene {
 
         for (let enemy of my.sprite.enemyArray) {
 
-            if (this.counter % 10 == 0) {
+            if (this.counter % 20 == 0) {
                 enemy.x -= 5;
             }
 
-            enemy.hunger++;
+            if (enemy.hunger > 0 ) {
+                enemy.hunger++;
+            }
 
             // BEHAVIOR UPDATING HERE
             let newType = null;
@@ -286,14 +288,6 @@ class galleryShooter extends Phaser.Scene {
                 onComplete: () => {
                         enemy.isFollowing = false;
                         enemy.angle = 0;
-
-                        if (enemy.hunger < 0) {
-                            enemy.visible=false;
-                            enemy.x += 800;
-                            console.log("a fsh instance was destroyed");
-                            my.sprite.enemyArray.pop(enemy);
-
-                        }
                     }
             });
             } 
@@ -329,17 +323,17 @@ class galleryShooter extends Phaser.Scene {
             for (let enemy of my.sprite.enemyArray) {
                 // check if food is colliding with fish
                 if (this.collides(enemy, food) && (food.visible) && (enemy.visible)) {
+
                     console.log("food collided with fish");
                     food.visible = false;
                     food.x += 800;
-                    //console.log("hunger: " + enemy.hunger);
 
-                    // check if any behaviors need to be updated
                     if (enemy.hunger < 0) {
-                        enemy.visible=false;
-                        enemy.x += 800;
-                        console.log("a fsh instance was destroyed");
-                        my.sprite.enemyArray.pop(enemy);
+                        enemy.destroy();
+                        const index = my.sprite.enemyArray.indexOf(enemy);
+                        if (index !== -1) {
+                            my.sprite.enemyArray.splice(index, 1);
+                        }
                     }
 
                     enemy.hunger -= 250;
