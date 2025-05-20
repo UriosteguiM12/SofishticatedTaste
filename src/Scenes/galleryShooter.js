@@ -17,8 +17,7 @@ class galleryShooter extends Phaser.Scene {
         this.waveOneActive = true;
         this.waveTwoActive = false;
 
-        this.waveOne = 10;
-        this.coorOne = [[600, 100], [600, 175], [600, 250], [600, 325], [600, 400], [775, 100], [775, 175], [775, 250], [775, 325], [775, 400]];
+        this.coor = [[600, 100], [600, 175], [600, 250], [600, 325], [600, 400], [775, 100], [775, 175], [775, 250], [775, 325], [775, 400]];
 
         this.maxFood = 5; // we won't have more than this much food on screen at once
         this.foodCooldown = 5;
@@ -200,11 +199,24 @@ class galleryShooter extends Phaser.Scene {
 
     update() {
 
+        let waveTwoCounter = 0
+
         let my = this.my; 
 
         if (this.waveOneActive) {
             this.startWave(10);
             this.waveOneActive = false;
+            this.waveTwoActive = true;
+        }
+
+        if ((my.sprite.enemyArray.length == 0) && (this.waveTwoActive)) {
+            waveTwoCounter = 20;
+            
+            while (waveTwoCounter!=0) {
+                waveTwoCounter--;
+            }
+            this.startWave(10);
+            this.waveTwoActive = false;
         }
 
         this.counter ++;
@@ -428,20 +440,37 @@ class galleryShooter extends Phaser.Scene {
 
     startWave(count) {
         for (let i = 0; i < count; i++) {
-            let behavior = this.Behavior.Normal; // for ease of testing i did it this way, u can update to generate randomly
+            if (this.waveOneActive) {
+                var behavior = this.Behavior.Normal;
+            }
+            else if (this.waveTwoActive) {
+                if (i < 5) {
+                    var behavior = this.Behavior.Hangry;
+                }
+                else {
+                    var behavior = this.Behavior.Angry;
+                }
+            }
 
             //creating a new path for each enemy
             let curve = new Phaser.Curves.Spline(behavior.firingPath);
-            let enemy = this.add.follower(curve, this.coorOne[i][0], this.coorOne[i][1], behavior.texture);
+            let enemy = this.add.follower(curve, this.coor[i][0], this.coor[i][1], behavior.texture);
             enemy.setPath(curve);
 
             // ok well we're making use of javascripts weirdness and just giving this new properties ig
             // setting types
             enemy.flipX = true;
-            enemy.hunger =  Math.random() * 250; // might wanna change values bc it ends up changing type really fast
-            enemy.behaviorType = "Normal";
-            enemy.pathCooldown = 500;
             enemy.isFollowing = false; 
+
+            if (behavior == this.Behavior.Normal) {
+                enemy.hunger =  Math.random() * 750;
+            }
+            else if (behavior == this.Behavior.Hangry) {
+                enemy.hunger =  Math.random() * 1750;
+            }
+            else {
+                enemy.hunger =  Math.random() * 2500;
+            }
 
             //debug
             console.log(`created enemy of type ${enemy.behaviorType} with hunger ${enemy.hunger} at position [${enemy.x}, ${enemy.y}]`);
