@@ -18,7 +18,7 @@ class galleryShooter extends Phaser.Scene {
         this.waveTwoActive = false;
 
         this.waveOne = 10;
-        this.coorOne = [[600, 300]];
+        this.coorOne = [[650, 100], [650, 175], [650, 250], [650, 325], [650, 400], [775, 100], [775, 175], [775, 250], [775, 325], [775, 400]];
 
         this.maxFood = 5; // we won't have more than this much food on screen at once
         this.foodCooldown = 5;
@@ -203,7 +203,7 @@ class galleryShooter extends Phaser.Scene {
         let my = this.my; 
 
         if (this.waveOneActive) {
-            this.startWave(1);
+            this.startWave(10);
             this.waveOneActive = false;
         }
 
@@ -250,17 +250,22 @@ class galleryShooter extends Phaser.Scene {
         this.foodCooldownCounter--;
 
         for (let enemy of my.sprite.enemyArray) {
+
+            if (this.counter % 10 == 0) {
+                enemy.x -= 5;
+            }
+
             enemy.hunger++;
 
             // BEHAVIOR UPDATING HERE
             let newType = null;
 
             // changed order bc if not angry wouldnt be triggered probably
-            if (enemy.hunger < 2000) {
+            if (enemy.hunger < 1000)  {
                 newType = "Normal";
-            } else if (enemy.hunger < 4000) {
+            } else if (enemy.hunger < 2000) {
                 newType = "Angry";
-            } else if (enemy.hunger < 8000) {
+            } else if (enemy.hunger < 4000) {
                 newType = "Hangry";
             }
             else {
@@ -278,11 +283,17 @@ class galleryShooter extends Phaser.Scene {
                 ease: 'Sine.easeInOut',
                 repeat: 1, 
                 yoyo: false,
-                rotateToPath: true,
                 onComplete: () => {
                         enemy.isFollowing = false;
                         enemy.angle = 0;
-                        enemy.flipX = true;
+
+                        if (enemy.hunger < 0) {
+                            enemy.visible=false;
+                            enemy.x += 800;
+                            console.log("a fsh instance was destroyed");
+                            my.sprite.enemyArray.pop(enemy);
+
+                        }
                     }
             });
             } 
@@ -317,7 +328,8 @@ class galleryShooter extends Phaser.Scene {
 
             for (let enemy of my.sprite.enemyArray) {
                 // check if food is colliding with fish
-                if (this.collides(enemy, food) && (food.visible)) {
+                if (this.collides(enemy, food) && (food.visible) && (enemy.visible)) {
+                    console.log("food collided with fish");
                     food.visible = false;
                     food.x += 800;
                     //console.log("hunger: " + enemy.hunger);
@@ -325,6 +337,8 @@ class galleryShooter extends Phaser.Scene {
                     // check if any behaviors need to be updated
                     if (enemy.hunger < 0) {
                         enemy.visible=false;
+                        enemy.x += 800;
+                        console.log("a fsh instance was destroyed");
                         my.sprite.enemyArray.pop(enemy);
                     }
 
@@ -429,6 +443,7 @@ class galleryShooter extends Phaser.Scene {
 
             // ok well we're making use of javascripts weirdness and just giving this new properties ig
             // setting types
+            enemy.flipX = true;
             enemy.hunger =  Math.random() * 250; // might wanna change values bc it ends up changing type really fast
             enemy.behaviorType = "Normal";
             enemy.pathCooldown = 500;
