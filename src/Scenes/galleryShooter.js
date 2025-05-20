@@ -79,6 +79,9 @@ class galleryShooter extends Phaser.Scene {
     create() {
         let my = this.my;
 
+        this.bubbles = this.physics.add.group();
+        this.rocks = this.physics.add.group();
+
         my.sprite.player = this.add.sprite(40, 50,"player");
         
         my.sprite.sandStar = this.add.sprite(30,570,"sandStar")
@@ -163,7 +166,7 @@ class galleryShooter extends Phaser.Scene {
                     638, 411,
                     652, 377
                 ],
-                pathCooldown: 5000
+                pathCooldown: 2000
             },
             Angry: {
                 texture: "angryFish",
@@ -190,7 +193,7 @@ class galleryShooter extends Phaser.Scene {
                     609, 375,
                     614, 356
                 ],
-                pathCooldown: 250
+                pathCooldown: 1000
             },
             Normal: {
                 texture: "normalFish",
@@ -201,7 +204,7 @@ class galleryShooter extends Phaser.Scene {
                     353, 446,
                     494, 323
                 ],
-                pathCooldown: 500
+                pathCooldown: 330
             }
         };
 
@@ -304,15 +307,41 @@ class galleryShooter extends Phaser.Scene {
             if (!enemy.isFollowing && (this.counter % enemy.pathCooldown == 0)) {
                 enemy.isFollowing = true;
 
-                // Track an attack timer for each enemy while moving
-                enemy.attackTimer = this.time.addEvent({
-                    delay: 1500, // attack every 500ms (tweak as needed)
-                    callback: () => {
-                        this.enemyAttack(enemy);
-                    },
-                    callbackScope: this,
-                    loop: true
-                });
+                if (enemy.behavior == this.Behavior.Normal) {
+
+                    // For a normal fish:
+                    this.time.addEvent({
+                        delay: 1500,
+                        callback: () => {
+                            if (enemy.active) this.shootBubble(enemy);
+
+                        },
+                        loop: true
+                    });
+
+                }
+
+                else if (enemy.behavior == this.Behavior.Angry) {
+                // For an angry fish:
+                    this.time.addEvent({
+                        delay: 2500,
+                        callback: () => {
+                            if (enemy.active) this.shootRock(enemy);
+                        },
+                        loop: true
+                    });
+                }
+
+                else {
+                    // For a hangry fish:
+                    this.time.addEvent({
+                        delay: 4500,
+                        callback: () => {
+                            if (enemy.active) this.shootRockSpread(enemy);
+                        },
+                        loop: true
+                    });
+                }
 
                 enemy.startFollow({
                 duration: 3000,
@@ -322,12 +351,6 @@ class galleryShooter extends Phaser.Scene {
                 onComplete: () => {
                         enemy.isFollowing = false;
                         enemy.angle = 0;
-
-                        // Stop attack when path is done
-                        if (enemy.attackTimer) {
-                            enemy.attackTimer.remove();
-                            enemy.attackTimer = null;
-                        }
                     }
                 });
             } 
@@ -447,6 +470,7 @@ class galleryShooter extends Phaser.Scene {
             let curve = new Phaser.Curves.Spline(offsetPath);
             enemy.setPath(curve);
             enemy.behaviorType = type;
+            enemy.behavior = behavior;
         }
         console.log("behavior updated to "+ type);
     }
@@ -507,31 +531,29 @@ class galleryShooter extends Phaser.Scene {
         }
     }
 
-    enemyAttack(enemy) {
-    // You can change this to do whatever the enemy's "attack" is.
-    // For example, creating a bubble, firing a projectile, etc.
+    shootBubble(fish) {
+        const bubble = this.bubbles.create(fish.x, fish.y, 'bubble');
+        bubble.setVelocityX(-200); // Normal fish - leftward bubble
+        bubble.setScale(0.5);
+    }
 
-        // Use a bubble from the pool
-        for (let bubble of this.my.sprite.bubbleArray) {
-            if (!bubble.visible) {
-                bubble.x = enemy.x;
-                bubble.y = enemy.y;
-                bubble.visible = true;
+    shootRock(fish) {
+        const rock = this.rocks.create(fish.x, fish.y, 'rock');
+        rock.setVelocityX(-250); // Angry fish - leftward rock
+        rock.setScale(0.5);
+    }
 
-                // Make the bubble move (e.g., downwards)
-                this.tweens.add({
-                    targets: bubble,
-                    y: bubble.y + 100,
-                    duration: 1000,
-                    ease: 'Linear',
-                    onComplete: () => {
-                        bubble.visible = false;
-                        bubble.x = -100;
-                        bubble.y = -100;
-                    }
-                });
-                break;
-            }
-        }
+    shootRockSpread(fish) {
+        const center = this.rocks.create(fish.x, fish.y, 'rock');
+        center.setVelocity(-250, 0); // Straight left
+        center.setScale(0.5);
+
+        const left = this.rocks.create(fish.x, fish.y, 'rock');
+        left.setVelocity(-250, -100); // Skew up-left
+        left.setScale(0.5);
+
+        const right = this.rocks.create(fish.x, fish.y, 'rock');
+        right.setVelocity(-250, 100); // Skew down-left
+        right.setScale(0.5);
     }
 }

@@ -22,7 +22,14 @@ let config = {
     width: 800,
     height: 600,
     backgroundColor: '#4488aa',
-    scene: [galleryShooter]
+    scene: [galleryShooter],
+    physics: {
+        default: 'arcade',
+        arcade: {
+            gravity: { y: 0 }, // optional
+            debug: false
+        }
+    }
 }
 
 const game = new Phaser.Game(config);
