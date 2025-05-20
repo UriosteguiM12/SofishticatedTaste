@@ -13,6 +13,8 @@ class galleryShooter extends Phaser.Scene {
         // this array holds the pointers to the food sprites
         this.my.sprite.foodArray = [];
         this.my.sprite.enemyArray = [];
+        this.my.sprite.rockArray = [];
+        this.my.sprite.bubbleArray = [];
 
         this.waveOneActive = true;
         this.waveTwoActive = false;
@@ -23,6 +25,9 @@ class galleryShooter extends Phaser.Scene {
         this.foodCooldown = 5;
         this.foodCooldownCounter = 0;
         this.curve = null;
+
+        this.maxBubble = 10;
+
     }
 
     preload() {
@@ -98,6 +103,12 @@ class galleryShooter extends Phaser.Scene {
             //create sprites that are offscreen and invisible
             my.sprite.foodArray.push(this.add.sprite(-100, -100, "food"));
             my.sprite.foodArray[i].visible = false;
+        }
+
+        for (let i=0; i < this.maxBubble; i++) {
+            //create sprites that are offscreen and invisible
+            my.sprite.bubbleArray.push(this.add.sprite(-100, -100, "bubble"));
+            my.sprite.bubbleArray[i].visible = false;
         }
 
         //CONTINUE HERE: Fix Seaweed!! >W<
@@ -210,8 +221,8 @@ class galleryShooter extends Phaser.Scene {
         }
 
         if ((my.sprite.enemyArray.length == 0) && (this.waveTwoActive)) {
-            waveTwoCounter = 20;
-            
+            waveTwoCounter = 50;
+
             while (waveTwoCounter!=0) {
                 waveTwoCounter--;
             }
@@ -263,8 +274,8 @@ class galleryShooter extends Phaser.Scene {
 
         for (let enemy of my.sprite.enemyArray) {
 
-            if (this.counter % 20 == 0) {
-                enemy.x -= 5;
+            if (this.counter % 10 == 0) {
+                enemy.x -= 3;
             }
 
             if (enemy.hunger > 0 ) {
@@ -292,6 +303,17 @@ class galleryShooter extends Phaser.Scene {
 
             if (!enemy.isFollowing && (this.counter % enemy.pathCooldown == 0)) {
                 enemy.isFollowing = true;
+
+                // Track an attack timer for each enemy while moving
+                enemy.attackTimer = this.time.addEvent({
+                    delay: 1500, // attack every 500ms (tweak as needed)
+                    callback: () => {
+                        this.enemyAttack(enemy);
+                    },
+                    callbackScope: this,
+                    loop: true
+                });
+
                 enemy.startFollow({
                 duration: 3000,
                 ease: 'Sine.easeInOut',
@@ -300,8 +322,14 @@ class galleryShooter extends Phaser.Scene {
                 onComplete: () => {
                         enemy.isFollowing = false;
                         enemy.angle = 0;
+
+                        // Stop attack when path is done
+                        if (enemy.attackTimer) {
+                            enemy.attackTimer.remove();
+                            enemy.attackTimer = null;
+                        }
                     }
-            });
+                });
             } 
         }
         
@@ -476,6 +504,34 @@ class galleryShooter extends Phaser.Scene {
             console.log(`created enemy of type ${enemy.behaviorType} with hunger ${enemy.hunger} at position [${enemy.x}, ${enemy.y}]`);
 
             this.my.sprite.enemyArray.push(enemy);
+        }
+    }
+
+    enemyAttack(enemy) {
+    // You can change this to do whatever the enemy's "attack" is.
+    // For example, creating a bubble, firing a projectile, etc.
+
+        // Use a bubble from the pool
+        for (let bubble of this.my.sprite.bubbleArray) {
+            if (!bubble.visible) {
+                bubble.x = enemy.x;
+                bubble.y = enemy.y;
+                bubble.visible = true;
+
+                // Make the bubble move (e.g., downwards)
+                this.tweens.add({
+                    targets: bubble,
+                    y: bubble.y + 100,
+                    duration: 1000,
+                    ease: 'Linear',
+                    onComplete: () => {
+                        bubble.visible = false;
+                        bubble.x = -100;
+                        bubble.y = -100;
+                    }
+                });
+                break;
+            }
         }
     }
 }
