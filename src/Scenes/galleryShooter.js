@@ -80,7 +80,10 @@ class galleryShooter extends Phaser.Scene {
         let my = this.my;
 
         this.bubbles = this.physics.add.group();
-        this.rocks = this.physics.add.group();
+        this.rocks = this.physics.add.group({
+            defaultKey: 'rock',
+            maxSize: 50 // adjust depending on how many rocks are on screen
+        });
 
         my.sprite.player = this.add.sprite(40, 50,"player");
         
@@ -95,11 +98,6 @@ class galleryShooter extends Phaser.Scene {
 
         for (let j = 30; j <= 870; j += 60) {
             my.sprite.sandTile = this.add.sprite(j,510,"sandTile2");
-        }
-
-        for (let k = (game.config.width - 180)/2 + 30; k <= (game.config.width - 180)/2 + 180; k+=60) {
-            my.sprite.healthHeart = this.add.sprite(k,525,"healthHeart");
-            my.sprite.healthHeart.scale = 0.15
         }
 
         for (let i=0; i < this.maxFood; i++) {
@@ -135,6 +133,25 @@ class galleryShooter extends Phaser.Scene {
         my.sprite.scorePosThree = this.add.sprite(458, 575, "numberZero");
 
         this.counter = 0;
+        this.healthCounter = 3;
+
+        this.my.sprite.healthHearts = []; // create an array to hold the heart sprites
+
+        let heartX = (game.config.width - 180) / 2 + 30;
+        for (let i = 0; i < 3; i++) {
+            let heart = this.add.sprite(heartX + i * 60, 525, "healthHeart");
+            heart.scale = 0.15;
+            this.my.sprite.healthHearts.push(heart);
+        }
+
+        // World bounds cleanup for all rocks
+        this.physics.world.on('worldbounds', (body) => {
+            const rock = body.gameObject;
+            if (rock && rock.texture.key === 'rock') {
+                rock.setActive(false);
+                rock.setVisible(false);
+            }
+        });
 
         /*
         // have an event handler for button
@@ -166,7 +183,7 @@ class galleryShooter extends Phaser.Scene {
                     638, 411,
                     652, 377
                 ],
-                pathCooldown: 2000
+                pathCooldown: 1500
             },
             Angry: {
                 texture: "angryFish",
@@ -204,7 +221,7 @@ class galleryShooter extends Phaser.Scene {
                     353, 446,
                     494, 323
                 ],
-                pathCooldown: 330
+                pathCooldown: 300
             }
         };
 
@@ -311,7 +328,7 @@ class galleryShooter extends Phaser.Scene {
 
                     // For a normal fish:
                     this.time.addEvent({
-                        delay: 1500,
+                        delay: 1000,
                         callback: () => {
                             if (enemy.active) this.shootBubble(enemy);
 
@@ -324,7 +341,7 @@ class galleryShooter extends Phaser.Scene {
                 else if (enemy.behavior == this.Behavior.Angry) {
                 // For an angry fish:
                     this.time.addEvent({
-                        delay: 2500,
+                        delay: 1500,
                         callback: () => {
                             if (enemy.active) this.shootRock(enemy);
                         },
@@ -335,7 +352,7 @@ class galleryShooter extends Phaser.Scene {
                 else {
                     // For a hangry fish:
                     this.time.addEvent({
-                        delay: 4500,
+                        delay: 2000,
                         callback: () => {
                             if (enemy.active) this.shootRockSpread(enemy);
                         },
@@ -356,6 +373,20 @@ class galleryShooter extends Phaser.Scene {
             } 
         }
         
+        for (let rock of this.rocks.getChildren()) {
+            if (rock.visible && this.collides(rock, this.my.sprite.player)) {
+                rock.visible = false;
+                rock.x = -100; // move it offscreen
+                this.healthCounter--;
+                this.updateHearts();
+
+                if (this.healthCounter <= 0) {
+                    console.log("Player is dead!");
+                    // Add logic for game over or restarting scene if needed
+                }
+            }
+        }
+                
         // player movement + constraints
         if (this.wKey.isDown) my.sprite.player.y -= this.playerSpeed;
         if (this.sKey.isDown) my.sprite.player.y += this.playerSpeed;
@@ -417,7 +448,6 @@ class galleryShooter extends Phaser.Scene {
                 food.visible = false;
             }
         }
-        
     }
 
     // A center-radius AABB collision check
@@ -538,22 +568,53 @@ class galleryShooter extends Phaser.Scene {
     }
 
     shootRock(fish) {
-        const rock = this.rocks.create(fish.x, fish.y, 'rock');
-        rock.setVelocityX(-250); // Angry fish - leftward rock
-        rock.setScale(0.5);
+        const rock = this.rocks.get(fish.x, fish.y, 'rock');
+
+        if (rock) {
+            rock.setActive(true);
+            rock.setVisible(true);
+            rock.body.setAllowGravity(false);
+            rock.setVelocityX(-250); // Angry fish - leftward rock
+            rock.setScale(0.5);
+        }
+
+        rock.body.setCollideWorldBounds(true);
+        rock.body.onWorldBounds = true;
     }
 
     shootRockSpread(fish) {
-        const center = this.rocks.create(fish.x, fish.y, 'rock');
-        center.setVelocity(-250, 0); // Straight left
-        center.setScale(0.5);
+        const center = this.rocks.get(fish.x, fish.y, 'rock');
+        const left = this.rocks.get(fish.x, fish.y, 'rock');
+        const right = this.rocks.get(fish.x, fish.y, 'rock');
 
-        const left = this.rocks.create(fish.x, fish.y, 'rock');
-        left.setVelocity(-250, -100); // Skew up-left
-        left.setScale(0.5);
+        [center, left, right].forEach((rock, index) => {
+            if (rock) {
+                rock.setActive(true);
+                rock.setVisible(true);
+                rock.body.setAllowGravity(false);
+                rock.setScale(0.5);
 
-        const right = this.rocks.create(fish.x, fish.y, 'rock');
-        right.setVelocity(-250, 100); // Skew down-left
-        right.setScale(0.5);
+                if (index === 0) {
+                    rock.setVelocity(-250, 0); // straight
+                } else if (index === 1) {
+                    rock.setVelocity(-250, -100); // up-left
+                } else {
+                    rock.setVelocity(-250, 100); // down-left
+                }
+            }
+        });
+
+        center.body.setCollideWorldBounds(true);
+        center.body.onWorldBounds = true;
+        left.body.setCollideWorldBounds(true);
+        left.body.onWorldBounds = true;
+        right.body.setCollideWorldBounds(true);
+        right.body.onWorldBounds = true;
+    }
+
+    updateHearts() {
+        for (let i = 0; i < this.my.sprite.healthHearts.length; i++) {
+            this.my.sprite.healthHearts[i].visible = i < this.healthCounter;
+        }
     }
 }
