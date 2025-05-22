@@ -13,7 +13,6 @@ class galleryShooter extends Phaser.Scene {
         // this array holds the pointers to the food sprites
         this.my.sprite.foodArray = [];
         this.my.sprite.enemyArray = [];
-        this.my.sprite.rockArray = [];
         this.my.sprite.bubbleArray = [];
 
         this.waveOneActive = true;
@@ -153,10 +152,19 @@ class galleryShooter extends Phaser.Scene {
             }
         });
 
-        /*
-        // have an event handler for button
-            this.scene.start("galleryShooter")
-        */
+        this.gameOverText = this.add.text(
+            game.config.width / 2, 
+            game.config.height / 2, 
+            'GAME OVER', 
+            { fontSize: '64px', fill: '#FFFFFF' }
+        );
+
+        this.gameOverText.setOrigin(0.5);
+        this.gameOverText.setVisible(false); 
+
+        this.isGameOver = false;
+      
+        this.restartKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
 
         this.Behavior = {
             Hangry: {
@@ -250,6 +258,28 @@ class galleryShooter extends Phaser.Scene {
             this.waveTwoActive = false;
         }
 
+        if ((my.sprite.enemyArray.length == 0) && (!this.waveTwoActive)) {
+                this.waveTwoActive = false;
+
+                this.isGameOver = true;
+                this.gameOverText.setText("YOU WIN!");
+                this.gameOverText.setVisible(true);
+
+                this.add.text(
+                    game.config.width / 2,
+                    game.config.height / 2 + 80,
+                    'Press R to Restart',
+                    { fontSize: '32px', fill: '#FFFFFF' }
+                ).setOrigin(0.5);
+            }
+
+        if (this.isGameOver) {
+            if (Phaser.Input.Keyboard.JustDown(this.restartKey)) {
+                this.scene.restart(); 
+            }
+            return;
+        }
+
         this.counter ++;
 
         // displaying score on screen
@@ -314,10 +344,11 @@ class galleryShooter extends Phaser.Scene {
                 newType = "Hangry";
             }
             else {
-                enemy.texture = "deadFish";
+                newType = "deadFish";
             }
             
             if (enemy.behaviorType !== newType) {
+                console.log(newType);
                 this.updateBehavior(enemy, newType);
             }
 
@@ -381,12 +412,11 @@ class galleryShooter extends Phaser.Scene {
                 this.updateHearts();
 
                 if (this.healthCounter <= 0) {
-                    console.log("Player is dead!");
-                    // Add logic for game over or restarting scene if needed
+                    this.endGame();
                 }
             }
         }
-                
+
         // player movement + constraints
         if (this.wKey.isDown) my.sprite.player.y -= this.playerSpeed;
         if (this.sKey.isDown) my.sprite.player.y += this.playerSpeed;
@@ -418,7 +448,7 @@ class galleryShooter extends Phaser.Scene {
                 // check if food is colliding with fish
                 if (this.collides(enemy, food) && (food.visible) && (enemy.visible)) {
 
-                    console.log("food collided with fish");
+                    //console.log("food collided with fish");
                     food.visible = false;
                     food.x += 800;
 
@@ -492,17 +522,37 @@ class galleryShooter extends Phaser.Scene {
 
     updateBehavior(enemy, type) {
         const behavior = this.Behavior[type];
-        if (enemy.behaviorType !== type) {
 
-            enemy.setTexture(behavior.texture);
+        // Check if enemy is a PathFollower and get its GameObject (usually a sprite)
+        const target = enemy.gameObject ?? enemy;
+
+        if ((enemy.behaviorType !== type) && (type !== "deadFish")) {
+            // ✅ Set texture on the Game Object, not the PathFollower
+            target.setTexture(behavior.texture);
+
             enemy.pathCooldown = behavior.pathCooldown;
-            let offsetPath = this.offsetPath(behavior.firingPath, enemy.x, enemy.y);
-            let curve = new Phaser.Curves.Spline(offsetPath);
-            enemy.setPath(curve);
+
+            const offsetPath = this.offsetPath(behavior.firingPath, enemy.x, enemy.y);
+            const curve = new Phaser.Curves.Spline(offsetPath);
+
+            // Only PathFollower has setPath
+            if (enemy.setPath) {
+                enemy.setPath(curve);
+            }
+
             enemy.behaviorType = type;
             enemy.behavior = behavior;
+        } else {
+            // Dead fish case
+            target.setTexture("deadFish");
+
+            this.healthCounter--;
+            this.updateHearts();
+
+            // Hide the Game Object instead of PathFollower
+            target.visible = false;
+            target.x = -100;
         }
-        console.log("behavior updated to "+ type);
     }
 
     // pretty much the same, just pushing it to a copy of a path so the main path isnt mutated
@@ -515,7 +565,7 @@ class galleryShooter extends Phaser.Scene {
             else {
                 result[i] = path[i] + enemyY;
             }
-            console.log("offsetPathPoint: " + result[i]);
+            //console.log("offsetPathPoint: " + result[i]);
         }
         return result;
     }
@@ -555,7 +605,7 @@ class galleryShooter extends Phaser.Scene {
             }
 
             //debug
-            console.log(`created enemy of type ${enemy.behaviorType} with hunger ${enemy.hunger} at position [${enemy.x}, ${enemy.y}]`);
+            //console.log(`created enemy of type ${enemy.behaviorType} with hunger ${enemy.hunger} at position [${enemy.x}, ${enemy.y}]`);
 
             this.my.sprite.enemyArray.push(enemy);
         }
@@ -616,5 +666,17 @@ class galleryShooter extends Phaser.Scene {
         for (let i = 0; i < this.my.sprite.healthHearts.length; i++) {
             this.my.sprite.healthHearts[i].visible = i < this.healthCounter;
         }
+    }
+
+    endGame() {
+        this.isGameOver = true;
+        this.gameOverText.setVisible(true);
+
+        this.add.text(
+            game.config.width / 2,
+            game.config.height / 2 + 80,
+            'Press R to Restart',
+            { fontSize: '32px', fill: '#FFFFFF' }
+        ).setOrigin(0.5);
     }
 }
