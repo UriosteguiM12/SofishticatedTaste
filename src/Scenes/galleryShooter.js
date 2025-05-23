@@ -73,6 +73,8 @@ class galleryShooter extends Phaser.Scene {
         this.load.image("numberSeven", "fishTile_115.png");
         this.load.image("numberEight", "fishTile_116.png");
         this.load.image("numberNine", "fishTile_117.png");
+
+        this.load.audio("laser", "laserSmall_003.ogg");
     }
 
     create() {
@@ -431,6 +433,7 @@ class galleryShooter extends Phaser.Scene {
                 for (let food of my.sprite.foodArray) {
                     // if the bullet is invisible, it's available
                     if (!food.visible) {
+                        this.sound.play("laser");
                         food.x = my.sprite.player.x + (my.sprite.player.displayWidth/2);
                         food.y = my.sprite.player.y;
                         food.visible = true;
