@@ -166,6 +166,15 @@ class galleryShooter extends Phaser.Scene {
             { fontSize: '64px', fill: '#FFFFFF' }
         );
 
+        this.restartText = this.add.text(
+            game.config.width / 2,
+            game.config.height / 2 + 80,
+            'Press R to Restart',
+            { fontSize: '32px', fill: '#FFFFFF' }
+        ).setOrigin(0.5);
+
+        this.restartText.setVisible(false); 
+
         this.gameOverText.setOrigin(0.5);
         this.gameOverText.setVisible(false); 
 
@@ -240,6 +249,8 @@ class galleryShooter extends Phaser.Scene {
             }
         };
 
+        this.init_game();
+
     }
 
 
@@ -265,24 +276,18 @@ class galleryShooter extends Phaser.Scene {
             this.waveTwoActive = false;
         }
 
-        if ((my.sprite.enemyArray.length == 0) && (!this.waveTwoActive)) {
+        if ((my.sprite.enemyArray.length == 0) && (!this.waveTwoActive)){
                 this.waveTwoActive = false;
 
                 this.isGameOver = true;
                 this.gameOverText.setText("YOU WIN!");
                 this.gameOverText.setVisible(true);
-
-                this.add.text(
-                    game.config.width / 2,
-                    game.config.height / 2 + 80,
-                    'Press R to Restart',
-                    { fontSize: '32px', fill: '#FFFFFF' }
-                ).setOrigin(0.5);
-            }
+                this.restartText.setVisible(true);
+        }
 
         if (this.isGameOver) {
             if (Phaser.Input.Keyboard.JustDown(this.restartKey)) {
-                this.scene.restart(); 
+                this.scene.restart()
             }
             return;
         }
@@ -420,6 +425,12 @@ class galleryShooter extends Phaser.Scene {
                 this.updateHearts();
 
                 if (this.healthCounter <= 0) {
+                    this.gameOverText = this.add.text(
+                        game.config.width / 2, 
+                        game.config.height / 2, 
+                        'GAME OVER', 
+                        { fontSize: '64px', fill: '#FFFFFF' }
+                    );
                     this.endGame();
                 }
             }
@@ -536,7 +547,7 @@ class galleryShooter extends Phaser.Scene {
         const target = enemy.gameObject ?? enemy;
 
         if ((enemy.behaviorType !== type) && (type !== "deadFish")) {
-            
+
             target.setTexture(behavior.texture);
 
             enemy.pathCooldown = behavior.pathCooldown;
@@ -680,12 +691,69 @@ class galleryShooter extends Phaser.Scene {
     endGame() {
         this.isGameOver = true;
         this.gameOverText.setVisible(true);
+        this.restartText.setVisible(true);
+    }
 
-        this.add.text(
-            game.config.width / 2,
-            game.config.height / 2 + 80,
-            'Press R to Restart',
-            { fontSize: '32px', fill: '#FFFFFF' }
-        ).setOrigin(0.5);
+    init_game() {
+        this.score = 0;
+        this.counter = 0;
+        this.healthCounter = 3;
+
+        this.waveOneActive = true;
+        this.waveTwoActive = false;
+
+        this.gameOverText = this.add.text(
+            game.config.width / 2, 
+            game.config.height / 2, 
+            'GAME OVER', 
+            { fontSize: '64px', fill: '#FFFFFF' }
+        );
+
+        this.gameOverText.visible = false;
+
+        this.foodCooldownCounter = 0;
+
+        this.isGameOver = false;
+
+        // Clear enemy array
+        this.my.sprite.enemyArray = [];
+
+        // Reset health hearts
+        if (this.my.sprite.healthHearts) {
+            this.my.sprite.healthHearts.forEach(heart => heart.setVisible(true));
+        }
+
+        // Reset score display
+        this.my.sprite.scorePosZero.setTexture("numberZero");
+        this.my.sprite.scorePosOne.setTexture("numberZero");
+        this.my.sprite.scorePosTwo.setTexture("numberZero");
+        this.my.sprite.scorePosThree.setTexture("numberZero");
+
+        // Hide game over text
+        this.gameOverText.setVisible(false);
+        this.restartText.setVisible(false);
+
+        // clear enemy projectiles
+        if (this.bubbles) {
+            this.bubbles.clear(true, true);
+        }
+
+        if (this.rocks) {
+            this.rocks.clear(true, true);
+        }
+
+        // clear food and enemies
+        this.my.sprite.foodArray.forEach(sprite => sprite.visible = false);
+        this.my.sprite.bubbleArray.forEach(sprite => sprite.visible = false);
+
+        if (this.my.sprite.enemyArray) {
+            this.my.sprite.enemyArray.forEach(enemy => {
+                if (enemy && enemy.destroy) {
+                    enemy.destroy();
+                }
+            });
+            this.my.sprite.enemyArray = [];
+        }
+        this.my.sprite.bubbleArray = [];
     }
 }
