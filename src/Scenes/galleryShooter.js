@@ -75,6 +75,7 @@ class galleryShooter extends Phaser.Scene {
         this.load.image("numberNine", "fishTile_117.png");
 
         this.load.audio("laser", "laserSmall_003.ogg");
+        this.load.audio("impact", "impactbell_heavy_000.ogg");
     }
 
     create() {
@@ -113,11 +114,15 @@ class galleryShooter extends Phaser.Scene {
             my.sprite.bubbleArray[i].visible = false;
         }
 
-        //CONTINUE HERE: Fix Seaweed!! >W<
+        // bg
         my.sprite.seaweed = this.add.sprite(450,455,"seaweedGreen");
-        my.sprite.seaweed2 = this.add.sprite(60,455,"seaweedGreen2");
-        my.sprite.seaweed3 = this.add.sprite(120,455,"seaweedGreen3");
-        my.sprite.seaweed4 = this.add.sprite(180,455,"seaweedGreen4");
+        my.sprite.seaweed5 = this.add.sprite(350,455,"seaweedPink");
+        my.sprite.seaweed2 = this.add.sprite(250,455,"seaweedGreen2");
+        my.sprite.seaweed6 = this.add.sprite(550,455,"seaweedPink2");
+        my.sprite.seaweed3 = this.add.sprite(650,455,"seaweedGreen3");
+        my.sprite.seaweed7 = this.add.sprite(150,455,"seaweedPink3");
+        my.sprite.seaweed4 = this.add.sprite(50,455,"seaweedGreen4");
+        my.sprite.seaweed8 = this.add.sprite(750,455,"seaweedPink4");
 
         this.wKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
         this.sKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S);
@@ -410,6 +415,7 @@ class galleryShooter extends Phaser.Scene {
             if (rock.visible && this.collides(rock, this.my.sprite.player)) {
                 rock.visible = false;
                 rock.x = -100; // move it offscreen
+                this.sound.play("impact");
                 this.healthCounter--;
                 this.updateHearts();
 
@@ -530,7 +536,7 @@ class galleryShooter extends Phaser.Scene {
         const target = enemy.gameObject ?? enemy;
 
         if ((enemy.behaviorType !== type) && (type !== "deadFish")) {
-            // ✅ Set texture on the Game Object, not the PathFollower
+            
             target.setTexture(behavior.texture);
 
             enemy.pathCooldown = behavior.pathCooldown;
