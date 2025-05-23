@@ -281,6 +281,7 @@ class galleryShooter extends Phaser.Scene {
 
                 this.isGameOver = true;
                 this.gameOverText.setText("YOU WIN!");
+                this.gameOverText.setOrigin(0.5);
                 this.gameOverText.setVisible(true);
                 this.restartText.setVisible(true);
         }
@@ -431,6 +432,7 @@ class galleryShooter extends Phaser.Scene {
                         'GAME OVER', 
                         { fontSize: '64px', fill: '#FFFFFF' }
                     );
+                    this.gameOverText.setOrigin(0.5);
                     this.endGame();
                 }
             }
@@ -709,6 +711,8 @@ class galleryShooter extends Phaser.Scene {
             { fontSize: '64px', fill: '#FFFFFF' }
         );
 
+        this.gameOverText.setOrigin(0.5);
+
         this.gameOverText.visible = false;
 
         this.foodCooldownCounter = 0;
@@ -717,6 +721,14 @@ class galleryShooter extends Phaser.Scene {
 
         // Clear enemy array
         this.my.sprite.enemyArray = [];
+
+        if (this.my.sprite.foodArray) {
+            this.my.sprite.foodArray.forEach(sprite => {
+                sprite.setVisible(false);
+                sprite.setActive(false); // important if you're using a group or physics
+                sprite.setPosition(-100, -100); // move offscreen to ensure they don’t render
+            });
+        }
 
         // Reset health hearts
         if (this.my.sprite.healthHearts) {
@@ -754,6 +766,7 @@ class galleryShooter extends Phaser.Scene {
             });
             this.my.sprite.enemyArray = [];
         }
+
         this.my.sprite.bubbleArray = [];
     }
 }
