@@ -75,7 +75,7 @@ class galleryShooter extends Phaser.Scene {
         this.load.image("numberNine", "fishTile_117.png");
 
         this.load.audio("laser", "laserSmall_003.ogg");
-        this.load.audio("impact", "impactbell_heavy_000.ogg");
+        this.load.audio("impact", "impactBell_heavy_000.ogg");
     }
 
     create() {
@@ -421,9 +421,7 @@ class galleryShooter extends Phaser.Scene {
             if (rock.visible && this.collides(rock, this.my.sprite.player)) {
                 rock.visible = false;
                 rock.x = -100; // move it offscreen
-                if (this.sound.get('impact')) {
-                    this.sound.play('impact');
-                }
+                this.sound.play("impact");
                 this.healthCounter--;
                 this.updateHearts();
 
