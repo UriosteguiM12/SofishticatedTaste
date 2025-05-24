@@ -421,7 +421,9 @@ class galleryShooter extends Phaser.Scene {
             if (rock.visible && this.collides(rock, this.my.sprite.player)) {
                 rock.visible = false;
                 rock.x = -100; // move it offscreen
-                this.sound.play("impact");
+                if (this.sound.get('impact')) {
+                    this.sound.play('impact');
+                }
                 this.healthCounter--;
                 this.updateHearts();
 
